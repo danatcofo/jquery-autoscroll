@@ -5,6 +5,8 @@
 released under GNU General Public License v3
 http://www.gnu.org/licenses/gpl.html
 version 1.0
+requires jQuery.timers
+http://plugins.jquery.com/project/timers
 */
 (function ($) {
     $.fn.autoscroll = function (settings) {
