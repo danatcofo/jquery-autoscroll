@@ -1,4 +1,4 @@
-﻿/// <reference path="jquery-1.4.2-vsdoc.js"/>
+﻿/// <reference path="jquery-1.4.2.min.js"/>
 /// <reference path="jquery.timers.js"/>
 /*
 @author Dan Gidman
@@ -14,34 +14,33 @@ http://plugins.jquery.com/project/timers
         /// <param name="settings" type="object">
         ///     [optional]
         ///     1: action - [start]|stop|delay|fastfoward|rewind|update|pause|resume|reverse|toggle
-        ///     2: step  -  unit defaults to 50  higher units means faster scroll, lower units means slower scroll
+        ///     2: step  -  unit [50] in pixels - higher units means faster scroll, lower units means slower scroll
         ///     3: direction - up|[down]|left|right|(up|down)(left|right)
         ///     4: scroll - [true]|false
         ///     5: delay -  unit [5000] in milliseconds
+        ///     6: speed -  slow|[fast]|unit in milliseconds - used with fastforward and rewind
         ///</param>
         var config = {
-            action: "start",
             step: 50,
-            direction: null,
             scroll: true,
-            delay: 5000
+            event: false
         };
         $.extend(config, settings);
         switch (config.action) {
             case "pause": this.each(function () {
-                var c = this.autoscroll;
+                var c = this.$autoscroll;
                 if (c && c.scroll) { c.scroll = false; }
             }); break;
             case "resume": this.each(function () {
-                var c = this.autoscroll;
+                var c = this.$autoscroll;
                 if (c) { c.scroll = true; }
             }); break;
             case "toggle": this.each(function () {
-                var c = this.autoscroll;
+                var c = this.$autoscroll;
                 if (c) { c.scroll = !c.scroll; }
             }); break;
             case "reverse": this.each(function () {
-                var c = this.autoscroll;
+                var c = this.$autoscroll;
                 if (c) {
                     switch (c.direction) {
                         case "up": c.direction = "down"; break;
@@ -55,59 +54,66 @@ http://plugins.jquery.com/project/timers
                     }
                 }
             }); break;
-            case "update": this.each(function () { if (this.autoscroll) { $.extend(this.autoscroll, config); } }); break;
+            case "update": this.each(function () { if (this.$autoscroll) { $.extend(this.$autoscroll, settings); } }); break;
             case "delay": this.each(function () {
-                var c = this.autoscroll;
+                var c = this.$autoscroll;
                 if (c && c.scroll) {
                     c.scoll = false;
-                    $(this).oneTime(config.delay, "autoscroll", function () {
-                        c.scroll = true;
+                    $(this).oneTime(config.delay || 5000, "autoscroll", function () {
+                        this.$autoscroll.scroll = true;
                     });
                 }
             }); break;
             case "stop": this.each(function () {
-                if (this.autoscroll) {
-                    $(this).stop();
-                    $.timer.remove(this, "autoscroll");
-                    $(this).removeAttr("autoscroll");
-                }
+                if (this.$autoscroll) { $(this).stop(true); $.timer.remove(this, "autoscroll"); $(this).removeAttr("$autoscroll"); }
             }); break;
             case "rewind": case "fastforward": this.each(function () {
-                var c = this.autoscroll;
+                var c = this.$autoscroll;
                 if (c) {
-                    if (c.step > 0 && false) {
-                        c.delayedStep = c.step;
-                        c.step = 0;
-                    }
+                    var scroll = c.scroll;
+                    c.scroll = false;
+                    var speed = config.speed || "fast";
                     switch (c.direction) {
-                        case "up": $(this).stop().animate({ scrollTop: ((config.action == "rewind") ? "+=" : "-=") + config.step }, 1); break;
-                        case "left": $(this).stop().animate({ scrollLeft: ((config.action == "rewind") ? "+=" : "-=") + config.step }, 1); break;
-                        case "right": $(this).stop().animate({ scrollLeft: ((config.action == "rewind") ? "-=" : "+=") + config.step }, 1); break;
-                        case "upleft": $(this).stop().animate({ scrollTop: ((config.action == "rewind") ? "+=" : "-=") + config.step, scrollLeft: ((config.action == "rewind") ? "+=" : "-=") + config.step }, 1); break;
-                        case "upright": $(this).stop().animate({ scrollTop: ((config.action == "rewind") ? "+=" : "-=") + config.step, scrollLeft: ((config.action == "rewind") ? "-=" : "+=") + config.step }, 1); break;
-                        case "downleft": $(this).stop().animate({ scrollTop: ((config.action == "rewind") ? "-=" : "+=") + config.step, scrollLeft: ((config.action == "rewind") ? "+=" : "-=") + config.step }, 1); break;
-                        case "downright": $(this).stop().animate({ scrollTop: ((config.action == "rewind") ? "-=" : "+=") + config.step, scrollLeft: ((config.action == "rewind") ? "-=" : "+=") + config.step }, 1); break;
-                        default: $(this).stop().animate({ scrollTop: ((config.action == "rewind") ? "-=" : "+=") + config.step }, 1); break;
+                        case "up": $(this).stop(true).animate({ scrollTop: ((config.action == "rewind") ? "+=" : "-=") + config.step }, speed, function () { if (scroll) this.$autoscroll.scroll = true; }); break;
+                        case "left": $(this).stop(true).animate({ scrollLeft: ((config.action == "rewind") ? "+=" : "-=") + config.step }, speed, function () { if (scroll) this.$autoscroll.scroll = true; }); break;
+                        case "right": $(this).stop(true).animate({ scrollLeft: ((config.action == "rewind") ? "-=" : "+=") + config.step }, speed, function () { if (scroll) this.$autoscroll.scroll = true; }); break;
+                        case "upleft": $(this).stop(true).animate({ scrollTop: ((config.action == "rewind") ? "+=" : "-=") + config.step, scrollLeft: ((config.action == "rewind") ? "+=" : "-=") + config.step }, speed, function () { if (scroll) this.$autoscroll.scroll = true; }); break;
+                        case "upright": $(this).stop(true).animate({ scrollTop: ((config.action == "rewind") ? "+=" : "-=") + config.step, scrollLeft: ((config.action == "rewind") ? "-=" : "+=") + config.step }, speed, function () { if (scroll) this.$autoscroll.scroll = true; }); break;
+                        case "downleft": $(this).stop(true).animate({ scrollTop: ((config.action == "rewind") ? "-=" : "+=") + config.step, scrollLeft: ((config.action == "rewind") ? "+=" : "-=") + config.step }, speed, function () { if (scroll) this.$autoscroll.scroll = true; }); break;
+                        case "downright": $(this).stop(true).animate({ scrollTop: ((config.action == "rewind") ? "-=" : "+=") + config.step, scrollLeft: ((config.action == "rewind") ? "-=" : "+=") + config.step }, speed, function () { if (scroll) this.$autoscroll.scroll = true; }); break;
+                        default: $(this).stop(true).animate({ scrollTop: ((config.action == "rewind") ? "-=" : "+=") + config.step }, speed, function () { if (scroll) this.$autoscroll.scroll = true; }); break;
                     }
                 }
             }); break;
             default: this.each(function () {
-                if (this.autoscroll) return;
-                else $.extend(this, { autoscroll: config });
-                $(this).scroll(function () { $(this).stop(); });
-                $(this).everyTime(100, "autoscroll", function () {
-                    var c = this.autoscroll;
-                    c.direction = c.direction || "down";
+                if (this.$autoscroll) return;
+                else $.extend(this, { $autoscroll: config });
+                $(this).hover(function () {
+                    var c = this.$autoscroll;
+                    if (c && c.scroll) {
+                        $(this).stop(true);
+                        c.event = true;
+                        c.scroll = false;
+                    }
+                }, function () {
+                    var c = this.$autoscroll;
+                    if (c && c.event) {
+                        c.event = false;
+                        c.scroll = true;
+                    }
+                });
+                $(this).everyTime(50, "autoscroll", function () {
+                    var c = this.$autoscroll;
                     if (c && c.scroll) {
                         switch (c.direction) {
-                            case "up": $(this).stop().animate({ scrollTop: "-=" + c.step }, 100); break;
-                            case "left": $(this).stop().animate({ scrollLeft: "-=" + c.step }, 100); break;
-                            case "right": $(this).stop().animate({ scrollLeft: "+=" + c.step }, 100); break;
-                            case "upleft": $(this).stop().animate({ scrollTop: "-=" + c.step, scrollLeft: "-=" + c.step }, 100); break;
-                            case "upright": $(this).stop().animate({ scrollTop: "-=" + c.step, scrollLeft: "+=" + c.step }, 100); break;
-                            case "downleft": $(this).stop().animate({ scrollTop: "+=" + c.step, scrollLeft: "-=" + c.step }, 100); break;
-                            case "downright": $(this).stop().animate({ scrollTop: "+=" + c.step, scrollLeft: "+=" + c.step }, 100); break;
-                            default: $(this).stop().animate({ scrollTop: "+=" + c.step }, 100); break;
+                            case "up": $(this).stop(true).animate({ scrollTop: "-=" + c.step }, 100); break;
+                            case "left": $(this).stop(true).animate({ scrollLeft: "-=" + c.step }, 100); break;
+                            case "right": $(this).stop(true).animate({ scrollLeft: "+=" + c.step }, 100); break;
+                            case "upleft": $(this).stop(true).animate({ scrollTop: "-=" + c.step, scrollLeft: "-=" + c.step }, 100); break;
+                            case "upright": $(this).stop(true).animate({ scrollTop: "-=" + c.step, scrollLeft: "+=" + c.step }, 100); break;
+                            case "downleft": $(this).stop(true).animate({ scrollTop: "+=" + c.step, scrollLeft: "-=" + c.step }, 100); break;
+                            case "downright": $(this).stop(true).animate({ scrollTop: "+=" + c.step, scrollLeft: "+=" + c.step }, 100); break;
+                            default: $(this).stop(true).animate({ scrollTop: "+=" + c.step }, 100); break;
                         }
                     }
                 });
